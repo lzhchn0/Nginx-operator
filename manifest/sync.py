@@ -18,9 +18,6 @@ logging.basicConfig(
 logger = logging.getLogger("hawk-metactrl")
 
 
-
-
-
 def new_dep(old):
     hawk = copy.deepcopy(old)
     hawk["spec"]["template"]
@@ -33,41 +30,35 @@ def new_dep(old):
 class Controller(BaseHTTPRequestHandler):
     def newIngress(self, parent: dict, children: dict) -> dict:
         return {
-    "apiVersion": "networking.k8s.io/v1",
-    "kind": "Ingress",
-    "metadata": {
- 
-        "name": parent['spec']['name'] + "-ingress",
-        "namespace": "metacontroller"
- 
-    },
-    "spec": {
-        "rules": [
-            {
-                "host": "foo.bar.com",
-                "http": {
-                    "paths": [
-                        {
-                            "backend": {
-                                "service": {
-                                    "name": parent['spec']['name'] + "-svc",
-                                    "port": {
-                                        "number": 80
-                                    }
+            "apiVersion": "networking.k8s.io/v1",
+            "kind": "Ingress",
+            "metadata": {
+                "name": parent["spec"]["name"] + "-ingress",
+                "namespace": "metacontroller",
+            },
+            "spec": {
+                "rules": [
+                    {
+                        "host": "foo.bar.com",
+                        "http": {
+                            "paths": [
+                                {
+                                    "backend": {
+                                        "service": {
+                                            "name": parent["spec"]["name"]
+                                            + "-svc",
+                                            "port": {"number": 80},
+                                        }
+                                    },
+                                    "path": "/",
+                                    "pathType": "ImplementationSpecific",
                                 }
-                            },
-                            "path": "/",
-                            "pathType": "ImplementationSpecific"
-                        }
-                    ]
-                }
-            }
-        ]
-    }
-}
-
-
-
+                            ]
+                        },
+                    }
+                ]
+            },
+        }
 
     def newConfigMap(self, parent: dict, children: dict) -> dict:
 
@@ -76,15 +67,12 @@ class Controller(BaseHTTPRequestHandler):
             "apiVersion": "v1",
             "kind": "ConfigMap",
             "metadata": {
-                "labels": parent['spec']['labels'],
-                "name": parent['spec']['name'] + "-cm",
+                "labels": parent["spec"]["labels"],
+                "name": parent["spec"]["name"] + "-cm",
                 "namespace": "metacontroller",
             },
-            "data": {
-                "nginx.conf": parent['spec']['nginxConfig']['value'] 
-            },
+            "data": {"nginx.conf": parent["spec"]["nginxConfig"]["value"]},
         }
-
 
     def newService(self, parent: dict, children: dict) -> dict:
 
@@ -93,14 +81,14 @@ class Controller(BaseHTTPRequestHandler):
             "apiVersion": "v1",
             "kind": "Service",
             "metadata": {
-                "labels": parent['spec']['labels'],
-                "name": parent['spec']['name'] + "-svc",
+                "labels": parent["spec"]["labels"],
+                "name": parent["spec"]["name"] + "-svc",
                 "namespace": "metacontroller",
             },
             "spec": {
                 "internalTrafficPolicy": "Cluster",
                 "ports": [{"port": 80, "protocol": "TCP", "targetPort": 80}],
-                "selector": parent['spec']['labels'],
+                "selector": parent["spec"]["labels"],
                 "sessionAffinity": "None",
                 "type": "ClusterIP",
             },
@@ -113,47 +101,41 @@ class Controller(BaseHTTPRequestHandler):
             "apiVersion": "apps/v1",
             "kind": "Deployment",
             "metadata": {
-                "name": parent['spec']['name'],
+                "name": parent["spec"]["name"],
                 "namespace": "metacontroller",
-                "labels": parent['spec']['labels'],
+                "labels": parent["spec"]["labels"],
             },
             "spec": {
-                "replicas": parent['spec']['replicas'],
-                "selector": parent['spec']['selector'],
+                "replicas": parent["spec"]["replicas"],
+                "selector": parent["spec"]["selector"],
                 "template": {
-                    "metadata": {"labels": parent['spec']['labels']},
+                    "metadata": {"labels": parent["spec"]["labels"]},
                     "spec": {
                         "containers": [
                             {
-                                "image": parent['spec']['image'],
+                                "image": parent["spec"]["image"],
                                 "imagePullPolicy": "Always",
-                                "name": parent['spec']['name'],
-
-                "volumeMounts": [
-                    {
-                        "name": "nginx-config-volume",
-                        "mountPath": "/etc/nginx/nginx.conf",
-                        "subPath": "nginx.conf"
-                    },
-                ],
-
-
+                                "name": parent["spec"]["name"],
+                                "volumeMounts": [
+                                    {
+                                        "name": "nginx-config-volume",
+                                        "mountPath": "/etc/nginx/nginx.conf",
+                                        "subPath": "nginx.conf",
+                                    },
+                                ],
                                 "resources": {},
                                 "terminationMessagePath": "/dev/termination-log",
                                 "terminationMessagePolicy": "File",
                             }
                         ],
-
-
-        "volumes": [
-            {
-                "name": "nginx-config-volume",
-                "configMap": {
-                    "name": parent['spec']['name'] + "-cm"
-                }
-            },
-        ],
-
+                        "volumes": [
+                            {
+                                "name": "nginx-config-volume",
+                                "configMap": {
+                                    "name": parent["spec"]["name"] + "-cm"
+                                },
+                            },
+                        ],
                         "dnsPolicy": "ClusterFirst",
                         "restartPolicy": "Always",
                         "schedulerName": "default-scheduler",
@@ -170,7 +152,9 @@ class Controller(BaseHTTPRequestHandler):
     def do_POST(self):
         logger.info("This is POST --- 01 ")
 
-        observed = json.loads(self.rfile.read(int(self.headers.get("content-length"))))
+        observed = json.loads(
+            self.rfile.read(int(self.headers.get("content-length")))
+        )
 
         logger.info("This is POST --- 0101 ")
 
@@ -190,9 +174,10 @@ class Controller(BaseHTTPRequestHandler):
             "status": {"working": "fine"},
             "children": [
                 self.newConfigMap(parent, children),
-                self.newDeploy(parent, children), 
-                self.newService(parent, children), 
-                self.newIngress(parent, children)],
+                self.newDeploy(parent, children),
+                self.newService(parent, children),
+                self.newIngress(parent, children),
+            ],
         }
 
         print(response, file=sys.stdout)
