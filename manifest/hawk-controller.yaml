@@ -1,0 +1,71 @@
+---
+apiVersion: metacontroller.k8s.io/v1alpha1
+kind: CompositeController
+metadata:
+  name: hawk-controller
+spec:
+  generateSelector: true
+  parentResource:
+    apiVersion: ctl.enisoc.com/v1
+    resource: hawks
+  childResources:
+    - apiVersion: apps/v1
+      resource: deployments
+      updateStrategy:
+        method: InPlace      
+    - apiVersion: v1
+      resource: configmaps
+      updateStrategy:
+        method: InPlace      
+    - apiVersion: v1
+      resource: services
+      updateStrategy:
+        method: InPlace      
+    - apiVersion: networking.k8s.io/v1
+      resource: ingresses
+      updateStrategy:
+        method: InPlace      
+
+
+  hooks:
+    sync:
+      webhook:
+        url: http://hawk-controller.metacontroller/sync
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hawk-controller
+  namespace: metacontroller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hawk-controller
+  template:
+    metadata:
+      labels:
+        app: hawk-controller
+    spec:
+      containers:
+      - name: controller
+        image: python:3.11
+        command: ["python", "/hooks/sync.py"]
+        volumeMounts:
+        - name: hooks
+          mountPath: /hooks
+      volumes:
+      - name: hooks
+        configMap:
+          name: hawk-controller
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hawk-controller
+  namespace: metacontroller
+spec:
+  selector:
+    app: hawk-controller
+  ports:
+  - port: 80

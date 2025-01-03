@@ -1,0 +1,7 @@
+resources:
+- hawk-controller.yaml
+configMapGenerator:
+- name: hawk-controller
+  namespace: metacontroller
+  files:
+  - sync.py
