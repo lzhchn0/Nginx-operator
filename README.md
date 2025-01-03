@@ -1,2 +1,2 @@
 # Nginx-operator
-build a Nginx Operator using Metacontroller
+Build a Nginx Operator using Metacontroller
