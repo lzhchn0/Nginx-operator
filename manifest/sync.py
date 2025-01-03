@@ -62,7 +62,7 @@ class Controller(BaseHTTPRequestHandler):
 
     def newConfigMap(self, parent: dict, children: dict) -> dict:
 
-        logger.info("This is NewConfigMap --- 04 ")
+        logger.info("This is NewConfigMap")
         return {
             "apiVersion": "v1",
             "kind": "ConfigMap",
@@ -76,7 +76,7 @@ class Controller(BaseHTTPRequestHandler):
 
     def newService(self, parent: dict, children: dict) -> dict:
 
-        logger.info("This is NewService --- 02 ")
+        logger.info("This is NewService")
         return {
             "apiVersion": "v1",
             "kind": "Service",
@@ -96,7 +96,7 @@ class Controller(BaseHTTPRequestHandler):
 
     def newDeploy(self, parent: dict, children: dict) -> dict:
         desire_status = {}
-        logger.info("This is SYNC --- 02 ")
+        logger.info("This is Deploy")
         return {
             "apiVersion": "apps/v1",
             "kind": "Deployment",
@@ -147,27 +147,22 @@ class Controller(BaseHTTPRequestHandler):
         }
 
     def do_GET(self):
-        logger.info("This is GET --- 00 ")
+        logger.info("This is GET ")
 
     def do_POST(self):
-        logger.info("This is POST --- 01 ")
+        logger.info("This is POST")
 
         observed = json.loads(
             self.rfile.read(int(self.headers.get("content-length")))
         )
 
-        logger.info("This is POST --- 0101 ")
-
-        logger.info("This is POST --- 0102--observed ")
         print(observed, file=sys.stdout)
-
-        logger.info("This is POST --- 0103--parent ")
         print(observed["parent"], file=sys.stdout)
 
         parent = observed["parent"]
         children = observed["children"]
 
-        logger.info("This is POST --- 0104--children ")
+        logger.info("This is POST -- children ")
         print(observed["children"], file=sys.stdout)
 
         response: dict = {
@@ -181,7 +176,7 @@ class Controller(BaseHTTPRequestHandler):
         }
 
         print(response, file=sys.stdout)
-        logger.info("This is POST --- 0106--response ")
+        logger.info("This is POST--response ")
 
         self.send_response(200)
         self.send_header("Content-type", "application/json")
@@ -189,7 +184,7 @@ class Controller(BaseHTTPRequestHandler):
         self.wfile.write(json.dumps(response).encode("utf-8"))
 
 
-logger.info("This is an info message")
+logger.info("To start http svr !")
 
 # print("To start http svr !")
 HTTPServer(("", 80), Controller).serve_forever()
