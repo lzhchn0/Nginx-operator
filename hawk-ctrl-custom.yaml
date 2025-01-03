@@ -1,0 +1,46 @@
+apiVersion: ctl.enisoc.com/v1
+kind: Hawk 
+metadata:
+  name: test-hawk
+spec:
+  name: mnginx
+  image: nginx:1.19.2-alpine
+  replicas: 3   
+  labels: 
+    app: hawk
+  selector:
+    matchLabels:
+      app: hawk
+  nginxConfig:
+    value: |-
+      user  nginx;
+      worker_processes  auto;
+      
+      error_log  /var/log/nginx/error.log warn;
+      pid        /var/run/nginx.pid;
+      
+      
+      events {
+          worker_connections  1024;
+      }
+      
+      
+      http {
+          include       /etc/nginx/mime.types;
+          default_type  application/octet-stream;
+      
+          log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                            '$status $body_bytes_sent "$http_referer" '
+                            '"$http_user_agent" "$http_x_forwarded_for"';
+      
+          access_log  /var/log/nginx/access.log  main;
+      
+          sendfile        on;
+          #tcp_nopush     on;
+      
+          keepalive_timeout  65;
+      
+          #gzip  on;
+      
+          include /etc/nginx/conf.d/*.conf;
+      }
